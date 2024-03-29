@@ -23,6 +23,8 @@ public partial class InoxEcommerceContext : DbContext
 
     public virtual DbSet<District> Districts { get; set; }
 
+    public virtual DbSet<Notification> Notifications { get; set; }
+
     public virtual DbSet<Order> Orders { get; set; }
 
     public virtual DbSet<OrderItem> OrderItems { get; set; }
@@ -64,7 +66,7 @@ public partial class InoxEcommerceContext : DbContext
 
         modelBuilder.Entity<Discount>(entity =>
         {
-            entity.HasKey(e => e.DiscountID).HasName("PK__Discount__E43F6DF685B5BD59");
+            entity.HasKey(e => e.DiscountID).HasName("PK__tmp_ms_x__E43F6DF674C9B018");
         });
 
         modelBuilder.Entity<District>(entity =>
@@ -72,6 +74,13 @@ public partial class InoxEcommerceContext : DbContext
             entity.HasKey(e => e.DistrictID).HasName("PK__District__85FDA4A633A0F741");
 
             entity.HasOne(d => d.City).WithMany(p => p.Districts).HasConstraintName("District_fk0");
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationID).HasName("PK__tmp_ms_x__20CF2E320789874E");
+
+            entity.HasOne(d => d.ReceiverNavigation).WithMany(p => p.Notifications).HasConstraintName("FK_Notification_Users");
         });
 
         modelBuilder.Entity<Order>(entity =>
@@ -120,7 +129,7 @@ public partial class InoxEcommerceContext : DbContext
 
         modelBuilder.Entity<Token>(entity =>
         {
-            entity.HasKey(e => e.TokenID).HasName("PK__tmp_ms_x__658FEE8ABD1777CE");
+            entity.HasKey(e => e.TokenID).HasName("PK__tmp_ms_x__658FEE8A2C31A93D");
 
             entity.HasOne(d => d.User).WithMany(p => p.Tokens).HasConstraintName("FK_Token_Users");
         });

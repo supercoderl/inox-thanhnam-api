@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using InoxThanhNamServer.Datas;
 using InoxThanhNamServer.Datas.Product;
 using InoxThanhNamServer.Datas.ProductImage;
@@ -13,6 +15,7 @@ namespace InoxThanhNamServer.Services.ProductImageSer
         private readonly InoxEcommerceContext _context;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _web;
+        private Cloudinary _cloudinary = new Cloudinary(new Account("djilwkrhz", "893911442158619", "KNYGVch5YUopCatK2XmpI_Ne3Xo"));
 
         public ProductImageService(InoxEcommerceContext context, IMapper mapper, IWebHostEnvironment web)
         {
@@ -36,6 +39,7 @@ namespace InoxThanhNamServer.Services.ProductImageSer
                         Status = (int)HttpStatusCode.OK
                     };
                 }
+                if(!(productImage.ImageURL.Contains("https://") || productImage.ImageURL.Contains("http://"))) System.IO.File.Delete(Path.Combine(_web.WebRootPath, productImage.ImageURL));
                 _context.ProductImages.Remove(productImage);
                 await _context.SaveChangesAsync();
                 return new ApiResponse<ProductImageProfile>
@@ -97,7 +101,7 @@ namespace InoxThanhNamServer.Services.ProductImageSer
             try
             {
                 await Task.CompletedTask;
-                request.ImageURL = UploadFile(file, request.ImageName);
+                request.ImageURL = await UploadFile(file, request.ImageName);
                 var productImageEntity = _mapper.Map<ProductImage>(request);
                 await _context.ProductImages.AddAsync(productImageEntity);
                 await _context.SaveChangesAsync();
@@ -120,30 +124,21 @@ namespace InoxThanhNamServer.Services.ProductImageSer
             }
         }
 
-        private string UploadFile(IFormFile file, string fileName)
+        private async Task<string> UploadFile(IFormFile file, string fileName)
         {
             try
             {
-                string path = Path.Combine(_web.WebRootPath, "Products", DateTime.Now.ToString("dd-MM-yyyy"));
-                string extension = Path.GetExtension(file.FileName);
-
-                if(!Directory.Exists(path))
+                using (var stream = new MemoryStream())
                 {
-                    Directory.CreateDirectory(path);
-                }
-
-                var pathToSave = Path.Combine(path, fileName + extension);
-                if(file.Length > 0)
-                {
-                    using (var stream = new FileStream(pathToSave, FileMode.Create))
+                    await file.CopyToAsync(stream);
+                    stream.Seek(0, SeekOrigin.Begin);
+                    var uploadParams = new ImageUploadParams()
                     {
-                        file.CopyTo(stream);
-                    }
-
-                    int fileIndex = pathToSave.IndexOf("Products");
-                    return pathToSave.Substring(fileIndex);
+                        File = new FileDescription(file.FileName, stream)
+                    };
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                    return uploadResult.Uri.ToString();
                 }
-                return string.Empty;
             }
             catch (Exception)
             {

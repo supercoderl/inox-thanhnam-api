@@ -11,13 +11,15 @@ namespace InoxThanhNamServer.Services.OrderSer
 
         Task<ApiResponse<OrderItemProfile>> UpdateOrderItem(int orderItemID, UpdateOrderItemRequest orderItem);
 
-        Task<ApiResponse<OrderProfile>> UpdateOrder(int orderID, UpdateOrderRequest order);
+        Task<ApiResponse<OrderProfile>> UpdateOrder(int? orderID, UpdateOrderRequest order);
 
         Task<ApiResponse<List<OrderItemProfile>>> GetOrderItemByUser(int orderID);
 
         Task<ApiResponse<OrderProfile>> GetOrderByUser(Guid userID);
 
-        Task<ApiResponse<List<OrderProfile>>> GetOrders();
+        Task<ApiResponse<OrderProfile>> GetOrderByID(int? orderID);
+
+        Task<ApiResponse<List<OrderProfile>>> GetOrders(string? text, int? status, string? fromDate, string? toDate);
 
         Task<ApiResponse<Object>> DeleteOrderItem(int orderItemID);
     }

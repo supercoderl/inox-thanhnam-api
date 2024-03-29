@@ -30,9 +30,9 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpPost("upload-image")]
-        public async Task<IActionResult> UploadImage(IFormFile file, CreateProductImageRequest request)
+        public async Task<IActionResult> UploadImage(IFormFile file, [FromQuery] CreateProductImageRequest request)
         {
-            var result = await _productImageService.GetImagesByProduct(1);
+            var result = await _productImageService.UploadImage(file, request);
             return StatusCode(result.Status, result);
         }
 

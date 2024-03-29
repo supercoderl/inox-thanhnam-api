@@ -18,13 +18,22 @@ public partial class Order
     [Column(TypeName = "datetime")]
     public DateTime OrderDate { get; set; }
 
-    [Column(TypeName = "decimal(18, 0)")]
+    [Column(TypeName = "money")]
     public decimal TotalAmount { get; set; }
 
     public int Status { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime CreatedAt { get; set; }
+
+    [StringLength(255)]
+    public string Fullname { get; set; }
+
+    [StringLength(20)]
+    public string Phone { get; set; }
+
+    [Column(TypeName = "ntext")]
+    public string Address { get; set; }
 
     [InverseProperty("Order")]
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

@@ -6,6 +6,6 @@ namespace InoxThanhNamServer.Services.ContactSer
     public interface IContactService
     {
         Task<ApiResponse<ContactProfile>> CreateContact(CreateContactRequest request);
-        Task<ApiResponse<List<ContactProfile>>> GetContacts();
+        Task<ApiResponse<List<ContactProfile>>> GetContacts(string? text);
     }
 }

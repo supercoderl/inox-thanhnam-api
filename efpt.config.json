@@ -36,6 +36,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[Notification]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[OrderItem]",
          "ObjectType": 0
       },
@@ -85,6 +89,10 @@
       },
       {
          "Name": "[dbo].[sp_delete_user]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[sp_get_orders]",
          "ObjectType": 1
       }
    ],

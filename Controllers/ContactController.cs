@@ -18,9 +18,9 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpGet("contacts")]
-        public async Task<IActionResult> GetContacts()
+        public async Task<IActionResult> GetContacts(string? text)
         {
-            var result = await _contactService.GetContacts();
+            var result = await _contactService.GetContacts(text);
             return StatusCode(result.Status, result);
         }
 

@@ -25,7 +25,7 @@ public partial class Product
 
     public int? Quantity { get; set; }
 
-    [Column(TypeName = "decimal(18, 0)")]
+    [Column(TypeName = "money")]
     public decimal Price { get; set; }
 
     public int? Priority { get; set; }

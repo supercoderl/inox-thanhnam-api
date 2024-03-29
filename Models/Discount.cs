@@ -15,11 +15,13 @@ public partial class Discount
     public int DiscountID { get; set; }
 
     [StringLength(255)]
-    [Unicode(false)]
     public string Name { get; set; }
 
-    [Column(TypeName = "decimal(18, 0)")]
-    public decimal? Percentage { get; set; }
+    [StringLength(255)]
+    [Unicode(false)]
+    public string Code { get; set; }
+
+    public int? Percentage { get; set; }
 
     public bool Active { get; set; }
 

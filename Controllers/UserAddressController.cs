@@ -1,8 +1,9 @@
 ﻿using InoxThanhNamServer.Datas.UserAddress;
-using InoxThanhNamServer.Services.UserAddress;
+using InoxThanhNamServer.Services.UserAddressSer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace InoxThanhNamServer.Controllers
 {
@@ -19,9 +20,27 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpGet("get-address-by-user")]
-        public async Task<IActionResult> GetAddressByUser(Guid UserID) 
-        { 
-            var result = await _userAddressService.GetAddressByUser(UserID);
+        public async Task<IActionResult> GetAddressByUser() 
+        {
+            string? userID = User.FindFirstValue("UserID");
+            if (userID is null)
+            {
+                return Unauthorized();
+            }
+            var result = await _userAddressService.GetAddressByUser(Guid.Parse(userID));
+            return StatusCode(result.Status, result);
+        }
+
+        [HttpPost("create-address")]
+        public async Task<IActionResult> CreateUserAddress(CreateAddressRequest request)
+        {
+            string? userID = User.FindFirstValue("UserID");
+            if (userID is null)
+            {
+                return Unauthorized();
+            }
+            request.UserID = Guid.Parse(userID);
+            var result = await _userAddressService.CreateUserAddress(request); 
             return StatusCode(result.Status, result);
         }
 

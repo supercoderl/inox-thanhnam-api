@@ -38,6 +38,9 @@ public partial class User
     [Column(TypeName = "datetime")]
     public DateTime? UpdatedAt { get; set; }
 
+    [InverseProperty("ReceiverNavigation")]
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
     [InverseProperty("User")]
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 

@@ -71,7 +71,7 @@ namespace InoxThanhNamServer.Services.ProductSer
             }
         }
 
-        public async Task<ApiResponse<ProductProfile>> GetProductByID(int productID)
+        public async Task<ApiResponse<ProductProfile>> GetProductByID(int? productID)
         {
             try
             {

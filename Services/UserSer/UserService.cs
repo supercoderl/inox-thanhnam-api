@@ -10,7 +10,7 @@ using System.Security.Claims;
 using InoxThanhNamServer.Models;
 using System.Data;
 using InoxThanhNamServer.Datas.UserAddress;
-using InoxThanhNamServer.Services.UserAddress;
+using InoxThanhNamServer.Services.UserAddressSer;
 
 namespace InoxThanhNamServer.Services.UserSer
 {

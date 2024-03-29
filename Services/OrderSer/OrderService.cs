@@ -3,7 +3,10 @@ using InoxThanhNamServer.Datas;
 using InoxThanhNamServer.Datas.Order;
 using InoxThanhNamServer.Datas.Product;
 using InoxThanhNamServer.Models;
+using InoxThanhNamServer.Services.ProductSer;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Net;
 
 namespace InoxThanhNamServer.Services.OrderSer
@@ -12,11 +15,13 @@ namespace InoxThanhNamServer.Services.OrderSer
     {
         private readonly InoxEcommerceContext _context;
         private readonly IMapper _mapper;
+        private readonly IProductService _productService;
 
-        public OrderService(InoxEcommerceContext context, IMapper mapper)
+        public OrderService(InoxEcommerceContext context, IMapper mapper, IProductService productService)
         {
             _context = context;
             _mapper = mapper;
+            _productService = productService;
         }
         public async Task<ApiResponse<OrderProfile>> CreateOrder(CreateOrderRequest order)
         {
@@ -45,22 +50,89 @@ namespace InoxThanhNamServer.Services.OrderSer
             }
         }
 
+        private async Task<bool> UpdateTotalAmount(CreateOrderItemRequest? request, UpdateOrderItemRequest? request1, int q)
+        {
+            try
+            {
+                await Task.CompletedTask;
+                var order = await GetOrderByID(request != null ? request.OrderID : request1.OrderID);
+                var product = await _productService.GetProductByID(request != null ? request.ProductID: request1.ProductID);
+                if(order.Data == null || product.Data == null)
+                {
+                    return false;
+                }
+                var orderEntity = await GetOrderByID(order.Data.OrderID);
+                if(orderEntity.Data != null)
+                {
+                    var updateOrder = new UpdateOrderRequest
+                    {
+                        OrderID = orderEntity.Data.OrderID,
+                        UserID = orderEntity.Data.UserID,
+                        OrderDate = DateTime.Now,
+                        TotalAmount = order.Data.TotalAmount + q * product.Data.Price,
+                        Status = order.Data.Status,
+                    };
+                    var result = await UpdateOrder(request != null ? request.OrderID : request1.OrderID, updateOrder);
+                    return (result.Success && result.Data != null);
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         public async Task<ApiResponse<OrderItemProfile>> CreateOrderItem(CreateOrderItemRequest orderItem)
         {
             try
             {
                 await Task.CompletedTask;
-                var orderItemExists = await _context.OrderItems.FirstOrDefaultAsync(x => x.ProductID == orderItem.ProductID);
+
+                var orderItemExists = await _context.OrderItems.FirstOrDefaultAsync(x => x.ProductID == orderItem.ProductID && x.OrderID == orderItem.OrderID);
                 if(orderItemExists != null)
                 {
+                    var q = orderItemExists.Quantity > orderItem.Quantity ? -1 : 1;
+                    var result = await UpdateTotalAmount(orderItem, null, q);
+                    if (!result)
+                    {
+                        return new ApiResponse<OrderItemProfile>
+                        {
+                            Success = false,
+                            Message = "Lỗi cập nhật đơn hàng",
+                            Status = (int)HttpStatusCode.OK
+                        };
+                    }
+
                     var updateOrderItem = new UpdateOrderItemRequest
                     {
                         OrderItemID = orderItemExists.OrderItemID,
                         OrderID = orderItemExists.OrderID,
                         ProductID = orderItemExists.ProductID,
-                        Quantity = orderItemExists.Quantity + 1,
+                        Quantity = orderItemExists.Quantity + q,
                     };
-                    return await UpdateOrderItem(updateOrderItem.OrderItemID, updateOrderItem);
+
+                    _mapper.Map(updateOrderItem, orderItemExists);
+                    _context.OrderItems.Update(orderItemExists);
+                    await _context.SaveChangesAsync();
+
+                    return new ApiResponse<OrderItemProfile>
+                    {
+                        Success = true,
+                        Message = "Đã cập nhật đơn hàng.",
+                        Status = (int)HttpStatusCode.OK
+                    };
+                }
+
+                var isUpdatedOrder = await UpdateTotalAmount(orderItem, null, orderItem.Quantity);
+                if (!isUpdatedOrder)
+                {
+                    return new ApiResponse<OrderItemProfile>
+                    {
+                        Success = false,
+                        Message = "Lỗi cập nhật đơn hàng",
+                        Status = (int)HttpStatusCode.OK
+                    };
                 }
 
                 var orderItemEntity = _mapper.Map<OrderItem>(orderItem);
@@ -101,6 +173,17 @@ namespace InoxThanhNamServer.Services.OrderSer
                     };
                 }
 
+                var isUpdatedOrder = await UpdateTotalAmount(null, _mapper.Map<UpdateOrderItemRequest>(orderItem), -(orderItem.Quantity));
+                if (!isUpdatedOrder)
+                {
+                    return new ApiResponse<Object>
+                    {
+                        Success = false,
+                        Message = "Lỗi cập nhật đơn hàng",
+                        Status = (int)HttpStatusCode.OK
+                    };
+                }
+
                 _context.OrderItems.Remove(orderItem);
                 await _context.SaveChangesAsync();
                 return new ApiResponse<Object>
@@ -126,13 +209,21 @@ namespace InoxThanhNamServer.Services.OrderSer
             try
             {
                 await Task.CompletedTask;
-                var order = await _context.Orders.FirstOrDefaultAsync(x => x.UserID == userID);
+                var order = await _context.Orders.FirstOrDefaultAsync(x => x.UserID == userID && x.Status == 0);
                 if (order == null)
                 {
+                    var newOrder = new CreateOrderRequest
+                    {
+                        UserID = userID,
+                        TotalAmount = 0,
+                        Status = 0,
+                    };
+                    var result = await CreateOrder(newOrder);
                     return new ApiResponse<OrderProfile>
                     {
                         Success = false,
-                        Message = "Không có giỏ hàng.",
+                        Message = "Tìm thấy giỏ hàng.",
+                        Data = result.Data,
                         Status = (int)HttpStatusCode.OK
                     };
                 }
@@ -193,12 +284,15 @@ namespace InoxThanhNamServer.Services.OrderSer
             }
         }
 
-        public async Task<ApiResponse<List<OrderProfile>>> GetOrders()
+        public async Task<ApiResponse<List<OrderProfile>>> GetOrders(string? text, int? status, string? fromDate, string? toDate)
         {
             try
             {
                 await Task.CompletedTask;
-                var orders = await _context.Orders.Where(x => x.Status == 1).OrderByDescending(x => x.OrderDate).ToListAsync();
+                var orders = await _context.Orders.FromSqlRaw("EXEC sp_get_orders @Status, @FromDate, @ToDate",
+                                new SqlParameter("@Status", status ?? (object)DBNull.Value),
+                                new SqlParameter("@FromDate", fromDate ?? (object)DBNull.Value),
+                                new SqlParameter("@ToDate", toDate ?? (object)DBNull.Value)).ToListAsync();
                 if(!orders.Any())
                 {
                     return new ApiResponse<List<OrderProfile>>
@@ -227,7 +321,7 @@ namespace InoxThanhNamServer.Services.OrderSer
             }
         }
 
-        public async Task<ApiResponse<OrderProfile>> UpdateOrder(int orderID, UpdateOrderRequest order)
+        public async Task<ApiResponse<OrderProfile>> UpdateOrder(int? orderID, UpdateOrderRequest order)
         {
             try
             {
@@ -298,13 +392,25 @@ namespace InoxThanhNamServer.Services.OrderSer
 
                 if (orderItemEntity == null)
                 {
-                    var newOrderItemEntity = _mapper.Map<OrderItem>(new CreateOrderItemRequest
+                    var newOrderItem = new CreateOrderItemRequest
                     {
                         OrderID = orderItem.OrderID,
                         ProductID = orderItem.ProductID,
                         Quantity = orderItem.Quantity,
-                        CreatedAt = DateTime.Now 
-                    });
+                        CreatedAt = DateTime.Now
+                    };
+
+                    var isUpdatedOrder = await UpdateTotalAmount(newOrderItem, null, orderItem.Quantity);
+                    if (!isUpdatedOrder)
+                    {
+                        return new ApiResponse<OrderItemProfile>
+                        {
+                            Success = false,
+                            Message = "Lỗi cập nhật đơn hàng",
+                            Status = (int)HttpStatusCode.OK
+                        };
+                    }
+                    var newOrderItemEntity = _mapper.Map<OrderItem>(newOrderItem);
 
                     _context.OrderItems.Add(newOrderItemEntity);
                     await _context.SaveChangesAsync();
@@ -318,12 +424,24 @@ namespace InoxThanhNamServer.Services.OrderSer
                     };
                 };
 
-                if(orderItem.Quantity <= 0)
+                if (orderItem.Quantity <= 0)
                 {
                     _context.OrderItems.Remove(orderItemEntity);
                 }
                 else
                 {
+                    int q = orderItem.Quantity < orderItemEntity.Quantity ? -1 : 1;
+
+                    var isUpdatedOrder = await UpdateTotalAmount(null, orderItem, q);
+                    if (!isUpdatedOrder)
+                    {
+                        return new ApiResponse<OrderItemProfile>
+                        {
+                            Success = false,
+                            Message = "Lỗi cập nhật đơn hàng",
+                            Status = (int)HttpStatusCode.OK
+                        };
+                    }
                     _mapper.Map(orderItem, orderItemEntity);
                     _context.OrderItems.Update(orderItemEntity);
                 }
@@ -344,6 +462,48 @@ namespace InoxThanhNamServer.Services.OrderSer
                 {
                     Success = false,
                     Message = "OrderService - UpdateOrderItem: " + ex.Message,
+                    Status = (int)HttpStatusCode.InternalServerError
+                };
+            }
+        }
+
+        public async Task<ApiResponse<OrderProfile>> GetOrderByID(int? orderID)
+        {
+            try
+            {
+                await Task.CompletedTask;
+                var order = await _context.Orders.FindAsync(orderID);
+                if (order == null)
+                {
+                    return new ApiResponse<OrderProfile>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy đơn hàng",
+                        Status = (int)HttpStatusCode.OK
+                    };
+                }
+
+                var orderItems = await _context.OrderItems.Where(x => x.OrderID == orderID).ToListAsync();
+                var orderMapping = _mapper.Map<OrderProfile>(order);
+                if(orderItems.Any())
+                {
+                    orderMapping.OrderItems = orderItems.Select(x => _mapper.Map<OrderItemProfile>(x)).ToList();
+                }
+
+                return new ApiResponse<OrderProfile>
+                {
+                    Success = true,
+                    Message = "Tìm thấy đơn hàng",
+                    Data = orderMapping,
+                    Status = (int)HttpStatusCode.OK
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<OrderProfile>
+                {
+                    Success = false,
+                    Message = "OrderService - GetOrderByID: " + ex.Message,
                     Status = (int)HttpStatusCode.InternalServerError
                 };
             }

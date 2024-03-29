@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using InoxThanhNamServer.Datas.Category;
 using InoxThanhNamServer.Datas.Contact;
+using InoxThanhNamServer.Datas.Discount;
+using InoxThanhNamServer.Datas.Notification;
 using InoxThanhNamServer.Datas.Order;
 using InoxThanhNamServer.Datas.Product;
 using InoxThanhNamServer.Datas.ProductImage;
@@ -39,6 +41,8 @@ namespace InoxThanhNamServer.Datas.Mapper
 
             CreateMap<Models.ProductImage, ProductImageProfile>();
             CreateMap<ProductImageProfile, Models.ProductImage>();
+            CreateMap<Models.ProductImage, CreateProductImageRequest>();
+            CreateMap<CreateProductImageRequest, Models.ProductImage>();
 
             CreateMap<Models.Order, CreateOrderRequest>();
             CreateMap<CreateOrderRequest, Models.Order>();
@@ -62,9 +66,23 @@ namespace InoxThanhNamServer.Datas.Mapper
             CreateMap<AddressProfile, Models.UserAddress>();
             CreateMap<Models.UserAddress, AddressUpdateRequest>();
             CreateMap<AddressUpdateRequest, Models.UserAddress>();
+            CreateMap<Models.UserAddress, CreateAddressRequest>();
+            CreateMap<CreateAddressRequest, Models.UserAddress>();
 
             CreateMap<Models.Category, CategoryProfile>();
             CreateMap<CategoryProfile, Models.Category>();
+
+            CreateMap<Models.Discount, DiscountProfile>();
+            CreateMap<DiscountProfile, Models.Discount>();
+            CreateMap<Models.Discount, CreateDiscountRequest>();
+            CreateMap<CreateDiscountRequest, Models.Discount>();
+            CreateMap<Models.Discount, UpdateDiscountRequest>();
+            CreateMap<UpdateDiscountRequest, Models.Discount>();
+
+            CreateMap<Models.Notification, NotificationProfile>();
+            CreateMap<NotificationProfile, Models.Notification>();
+            CreateMap<Models.Notification, UpdateNotificationRequest>();
+            CreateMap<UpdateNotificationRequest, Models.Notification>();
         }
     }
 }

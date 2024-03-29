@@ -23,6 +23,12 @@ namespace InoxThanhNamServer.Controllers
         [HttpPut("update-order/{OrderID}")]
         public async Task<IActionResult> UpdateOrder(int OrderID, UpdateOrderRequest request)
         {
+/*            string? userID = User.FindFirstValue("UserID");
+            if (userID is null)
+            {
+                return Unauthorized();
+            }
+            request.UserID = Guid.Parse(userID);*/
             var result = await _orderService.UpdateOrder(OrderID, request);
             return StatusCode(result.Status, result);
         }
@@ -44,9 +50,9 @@ namespace InoxThanhNamServer.Controllers
 
         [HttpGet("orders")]
         [Authorize]
-        public async Task<IActionResult> GetOrders()
+        public async Task<IActionResult> GetOrders(string? text, int? status, string? fromDate, string? toDate)
         {
-            var result = await _orderService.GetOrders();
+            var result = await _orderService.GetOrders(text, status, fromDate, toDate);
             return StatusCode(result.Status, result);
         }
 
@@ -59,6 +65,13 @@ namespace InoxThanhNamServer.Controllers
                 return Unauthorized();
             }
             var result = await _orderService.GetOrderByUser(Guid.Parse(userID));
+            return StatusCode(result.Status, result);
+        }
+
+        [HttpGet("get-order-by-id/{OrderID}")]
+        public async Task<IActionResult> GetOrderByID(int OrderID)
+        {
+            var result = await _orderService.GetOrderByID(OrderID);
             return StatusCode(result.Status, result);
         }
 

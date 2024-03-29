@@ -46,12 +46,16 @@ namespace InoxThanhNamServer.Services.ContactSer
             }
         }
 
-        public async Task<ApiResponse<List<ContactProfile>>> GetContacts()
+        public async Task<ApiResponse<List<ContactProfile>>> GetContacts(string? text)
         {
             try
             {
                 await Task.CompletedTask;
                 var contacts = await _context.Contacts.ToListAsync();
+                if(contacts.Any() && text != null)
+                {
+                    contacts = contacts.Where(x => x.Fullname.ToLower().Contains(text.ToLower())).ToList();
+                }
                 return new ApiResponse<List<ContactProfile>>
                 {
                     Success = true,
