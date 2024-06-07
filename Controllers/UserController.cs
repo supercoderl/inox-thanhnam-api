@@ -32,14 +32,14 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers([FromQuery]FilterUser? filter)
         {
-            var result = await _userService.GetUsers();
+            var result = await _userService.GetUsers(filter);
             return StatusCode(result.Status, result);
         }
 
         [HttpPut("update-user/{UserID}")]
-        public async Task<IActionResult> UpdateUser(Guid UserID, UserUpdateRequest request)
+        public async Task<IActionResult> UpdateUser(Guid UserID, [FromForm] UserUpdateRequest request)
         {
             var result = await _userService.UpdateUser(UserID, request);
             return StatusCode(result.Status, result);

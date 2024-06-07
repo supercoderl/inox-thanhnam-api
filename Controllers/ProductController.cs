@@ -24,9 +24,9 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpGet("products")]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts([FromQuery]FilterProduct? filter)
         {
-            var result = await _productService.GetProducts();
+            var result = await _productService.GetProducts(filter);
             return StatusCode(result.Status, result);
         }
 

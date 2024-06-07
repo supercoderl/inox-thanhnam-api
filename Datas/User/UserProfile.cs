@@ -9,6 +9,7 @@ namespace InoxThanhNamServer.Datas.User
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public int? Phone { get; set; }
+        public string? Avatar {  get; set; }
 
         public AddressProfile? UserAddress { get; set; }
         public bool IsActive { get; set; }

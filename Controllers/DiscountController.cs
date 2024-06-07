@@ -17,9 +17,9 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpGet("discounts")]
-        public async Task<IActionResult> GetDiscounts()
+        public async Task<IActionResult> GetDiscounts([FromQuery]FilterDiscount? filter)
         {
-            var result = await _discountService.GetDiscounts();
+            var result = await _discountService.GetDiscounts(filter);
             return StatusCode(result.Status, result);
         }
 

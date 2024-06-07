@@ -150,7 +150,7 @@ namespace InoxThanhNamServer.Services.JWT
             item.IsActive = false;
             item.RevokeAt = DateTime.Now;
 
-            _context.Tokens.Entry(item).State = EntityState.Modified;
+            _context.Tokens.Update(item);
             await _context.SaveChangesAsync();
             return true;
         }

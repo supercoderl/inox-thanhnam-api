@@ -2,9 +2,11 @@
 using InoxThanhNamServer.Datas;
 using InoxThanhNamServer.Datas.Discount;
 using InoxThanhNamServer.Datas.Order;
+using InoxThanhNamServer.Datas.User;
 using InoxThanhNamServer.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Reflection;
 
 namespace InoxThanhNamServer.Services.DiscountSer
 {
@@ -46,7 +48,7 @@ namespace InoxThanhNamServer.Services.DiscountSer
             }
         }
 
-        public async Task<ApiResponse<List<DiscountProfile>>> GetDiscounts()
+        public async Task<ApiResponse<List<DiscountProfile>>> GetDiscounts(FilterDiscount? filter)
         {
             try
             {
@@ -59,11 +61,16 @@ namespace InoxThanhNamServer.Services.DiscountSer
                         Message = "Không có mã giảm giá nào",
                         Status = (int)HttpStatusCode.OK
                     };
+
+                var discountsProfile = discounts.Select(d => _mapper.Map<DiscountProfile>(d)).ToList();
+
+                if (filter != null) discountsProfile = FilterDiscount(discountsProfile, filter);
+
                 return new ApiResponse<List<DiscountProfile>>
                 {
                     Success = true,
-                    Message = "Tìm thấy mã giảm giá.",
-                    Data = discounts.Select(x => _mapper.Map<DiscountProfile>(x)).ToList(),
+                    Message = $"Tìm thấy {discountsProfile.Count()} mã giảm giá.",
+                    Data = discountsProfile,
                     Status = (int)HttpStatusCode.OK
                 };
             }
@@ -127,6 +134,48 @@ namespace InoxThanhNamServer.Services.DiscountSer
                     Status = (int)HttpStatusCode.InternalServerError
                 };
             }
+        }
+
+        private List<DiscountProfile> FilterDiscount(List<DiscountProfile> discounts, FilterDiscount filter)
+        {
+            if (filter.PercentageMin != null && filter.PercentageMax != null)
+            {
+                discounts = discounts.Where(d => d.Percentage >= filter.PercentageMin && d.Percentage <= filter.PercentageMax).ToList();
+            }
+            if (filter.DateExpire != null)
+            {
+                discounts = discounts.Where(d => d.DateExpire == filter.DateExpire).ToList();
+            }
+            if (filter.LimitedQuantity != null)
+            {
+                discounts = discounts.Where(d => d.LimitedQuantity <= filter.LimitedQuantity).ToList();
+            }
+            if (filter.Status != null && filter.Status != -1)
+            {
+                discounts = discounts.Where(d => (d.Active ? 1 : 0) == filter.Status).ToList();
+            }
+            if (filter.SortType is not null)
+            {
+                PropertyInfo? propertyInfo = typeof(DiscountProfile).GetProperty(char.ToUpper(filter.SortType[0]) + filter.SortType.Substring(1))!;
+                if(propertyInfo != null)
+                {
+                    switch (filter.SortFrom)
+                    {
+                        case "ascending":
+                            discounts = discounts.OrderBy(x => propertyInfo.GetValue(x, null)).ToList();
+                            break;
+                        default:
+                            discounts = discounts.OrderByDescending(x => propertyInfo.GetValue(x, null)).ToList();
+                            break;
+                    }
+                }
+            }
+            if (filter.SearchText is not null)
+                discounts = discounts.Where(x =>
+                    (x.Code != null && x.Code.ToLower().Contains(filter.SearchText.ToLower())) ||
+                    (x.Name != null && x.Name.ToLower().Contains(filter.SearchText.ToLower()))
+                ).ToList();
+            return discounts;
         }
     }
 }

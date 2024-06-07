@@ -35,6 +35,8 @@ public partial class InoxEcommerceContext : DbContext
 
     public virtual DbSet<ProductImage> ProductImages { get; set; }
 
+    public virtual DbSet<ProductReview> ProductReviews { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Token> Tokens { get; set; }
@@ -66,7 +68,7 @@ public partial class InoxEcommerceContext : DbContext
 
         modelBuilder.Entity<Discount>(entity =>
         {
-            entity.HasKey(e => e.DiscountID).HasName("PK__tmp_ms_x__E43F6DF674C9B018");
+            entity.HasKey(e => e.DiscountID).HasName("PK__tmp_ms_x__E43F6DF69401FE2B");
         });
 
         modelBuilder.Entity<District>(entity =>
@@ -85,7 +87,7 @@ public partial class InoxEcommerceContext : DbContext
 
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.OrderID).HasName("PK__tmp_ms_x__C3905BAFC1D1B0D8");
+            entity.HasKey(e => e.OrderID).HasName("PK__tmp_ms_x__C3905BAF22F992DF");
 
             entity.HasOne(d => d.User).WithMany(p => p.Orders).HasConstraintName("Order_fk0");
         });
@@ -122,6 +124,20 @@ public partial class InoxEcommerceContext : DbContext
             entity.HasOne(d => d.Product).WithMany(p => p.ProductImages).HasConstraintName("FK_ProductImage_Product");
         });
 
+        modelBuilder.Entity<ProductReview>(entity =>
+        {
+            entity.HasKey(e => e.ReviewID).HasName("PK__ProductR__74BC79AE275C350A");
+
+            entity.Property(e => e.Likes).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Unlikes).HasDefaultValueSql("((0))");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductReviews)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProductReviews_Product");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ProductReviews).HasConstraintName("FK_ProductReviews_Users");
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.RoleID).HasName("PK__Role__8AFACE3AB30E36FE");
@@ -136,7 +152,7 @@ public partial class InoxEcommerceContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserID).HasName("PK__tmp_ms_x__1788CCAC54AE0398");
+            entity.HasKey(e => e.UserID).HasName("PK__tmp_ms_x__1788CCACE973EBD4");
 
             entity.Property(e => e.UserID).ValueGeneratedNever();
         });
@@ -170,7 +186,6 @@ public partial class InoxEcommerceContext : DbContext
             entity.HasOne(d => d.District).WithMany(p => p.Wards).HasConstraintName("Ward_fk0");
         });
 
-        OnModelCreatingGeneratedProcedures(modelBuilder);
         OnModelCreatingPartial(modelBuilder);
     }
 

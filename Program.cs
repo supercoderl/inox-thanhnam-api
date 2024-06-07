@@ -5,11 +5,13 @@ using InoxThanhNamServer.Services.CategorySer;
 using InoxThanhNamServer.Services.ContactSer;
 using InoxThanhNamServer.Services.DiscountSer;
 using InoxThanhNamServer.Services.EmailSer;
+using InoxThanhNamServer.Services.FileSer;
 using InoxThanhNamServer.Services.HubSer;
 using InoxThanhNamServer.Services.JWT;
 using InoxThanhNamServer.Services.NotificationSer;
 using InoxThanhNamServer.Services.OrderSer;
 using InoxThanhNamServer.Services.ProductImageSer;
+using InoxThanhNamServer.Services.ProductReviewSer;
 using InoxThanhNamServer.Services.ProductSer;
 using InoxThanhNamServer.Services.RoleSer;
 using InoxThanhNamServer.Services.UserAddressSer;
@@ -51,9 +53,10 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(x => x.WithOrigins(
-        "http://localhost:3000", "http://localhost:3001",
-        "https://inox-thanhnam-client.vercel.app/",
-        "https://inox-thanhnam-admin.vercel.app/"
+        "http://localhost:3000", 
+        "http://localhost:3001",
+        "https://inox-thanhnam-client.vercel.app",
+        "https://inox-thanhnam-admin.vercel.app"
         ).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
 });
 
@@ -78,6 +81,8 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IDiscountService, DiscountService>();
 builder.Services.AddScoped<INotificationService,  NotificationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IProductReviewService,  ProductReviewService>();
 
 builder.Services.AddSingleton<IDictionary<string, UserConnection>>(opts => new Dictionary<string, UserConnection>());
 builder.Services.AddSingleton(builder.Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>());

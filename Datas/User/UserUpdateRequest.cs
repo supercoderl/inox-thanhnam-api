@@ -7,8 +7,11 @@
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public int? Phone { get; set; }
+        public string? Avatar { get; set; }
 
         public bool? IsActive { get; set; } = true;
         public DateTime? UpdatedAt { get; set; } = DateTime.Now;
+
+        public IFormFile? File { get; set; }
     }
 }

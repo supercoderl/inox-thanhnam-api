@@ -23,6 +23,11 @@ public partial class Discount
 
     public int? Percentage { get; set; }
 
+    [Column(TypeName = "date")]
+    public DateTime? DateExpire { get; set; }
+
+    public int LimitedQuantity { get; set; }
+
     public bool Active { get; set; }
 
     public int? Priority { get; set; }

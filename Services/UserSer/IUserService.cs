@@ -12,7 +12,7 @@ namespace InoxThanhNamServer.Services.UserSer
         Task<bool> IsExist(string userName);
         Task<ApiResponse<Object>> Logout(string token);
         Task<ApiResponse<UserProfile>> GetProfile(Guid UserID);
-        Task<ApiResponse<List<UserProfile>>> GetUsers();
+        Task<ApiResponse<List<UserProfile>>> GetUsers(FilterUser? filter);
         Task<ApiResponse<UserUpdateRequest>> UpdateUser(Guid UserID, UserUpdateRequest user);
         Task<ApiResponse<Object>> DeleteUser(Guid UserID);
         ApiResponse<Object> SendBackupEmail(string recipientEmail, string token); 

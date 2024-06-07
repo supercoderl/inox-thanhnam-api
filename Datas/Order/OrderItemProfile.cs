@@ -1,4 +1,6 @@
-﻿namespace InoxThanhNamServer.Datas.Order
+﻿using InoxThanhNamServer.Datas.Product;
+
+namespace InoxThanhNamServer.Datas.Order
 {
     public class OrderItemProfile
     {
@@ -8,5 +10,6 @@
         public int Quantity { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        public ProductProfile? Product { get; set; }
     }
 }

@@ -30,6 +30,9 @@ public partial class User
 
     public int Phone { get; set; }
 
+    [Column(TypeName = "text")]
+    public string Avatar { get; set; }
+
     public bool IsActive { get; set; }
 
     [Column(TypeName = "datetime")]
@@ -43,6 +46,9 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<ProductReview> ProductReviews { get; set; } = new List<ProductReview>();
 
     [InverseProperty("User")]
     public virtual ICollection<Token> Tokens { get; set; } = new List<Token>();

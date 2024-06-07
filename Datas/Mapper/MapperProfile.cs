@@ -6,6 +6,7 @@ using InoxThanhNamServer.Datas.Notification;
 using InoxThanhNamServer.Datas.Order;
 using InoxThanhNamServer.Datas.Product;
 using InoxThanhNamServer.Datas.ProductImage;
+using InoxThanhNamServer.Datas.ProductReview;
 using InoxThanhNamServer.Datas.Role;
 using InoxThanhNamServer.Datas.User;
 using InoxThanhNamServer.Datas.UserAddress;
@@ -83,6 +84,13 @@ namespace InoxThanhNamServer.Datas.Mapper
             CreateMap<NotificationProfile, Models.Notification>();
             CreateMap<Models.Notification, UpdateNotificationRequest>();
             CreateMap<UpdateNotificationRequest, Models.Notification>();
+
+            CreateMap<Models.ProductReview, ProductReviewProfile>();
+            CreateMap<ProductReviewProfile, Models.ProductReview>();
+            CreateMap<Models.ProductReview, CreateProductReviewRequest>();
+            CreateMap<CreateProductReviewRequest, Models.ProductReview>(); 
+            CreateMap<Models.ProductReview, UpdateProductReviewRequest>();
+            CreateMap<UpdateProductReviewRequest, Models.ProductReview>();
         }
     }
 }

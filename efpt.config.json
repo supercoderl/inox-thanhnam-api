@@ -60,6 +60,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[ProductReviews]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[Role]",
          "ObjectType": 0
       },
@@ -82,18 +86,6 @@
       {
          "Name": "[dbo].[Ward]",
          "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[sp_delete_product]",
-         "ObjectType": 1
-      },
-      {
-         "Name": "[dbo].[sp_delete_user]",
-         "ObjectType": 1
-      },
-      {
-         "Name": "[dbo].[sp_get_orders]",
-         "ObjectType": 1
       }
    ],
    "UiHint": "desktop-hmpqmo9\\sqlexpress.InoxEcommerce.dbo1",

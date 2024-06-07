@@ -15,11 +15,15 @@ public partial class Order
 
     public Guid? UserID { get; set; }
 
+    public Guid? SessionID { get; set; }
+
     [Column(TypeName = "datetime")]
     public DateTime OrderDate { get; set; }
 
     [Column(TypeName = "money")]
     public decimal TotalAmount { get; set; }
+
+    public int ProductQuantity { get; set; }
 
     public int Status { get; set; }
 

@@ -21,7 +21,7 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpPut("update-order/{OrderID}")]
-        public async Task<IActionResult> UpdateOrder(int OrderID, UpdateOrderRequest request)
+        public async Task<IActionResult> UpdateOrder(int OrderID, UpdateOrderRequest request, bool isCheckout = false)
         {
 /*            string? userID = User.FindFirstValue("UserID");
             if (userID is null)
@@ -29,7 +29,7 @@ namespace InoxThanhNamServer.Controllers
                 return Unauthorized();
             }
             request.UserID = Guid.Parse(userID);*/
-            var result = await _orderService.UpdateOrder(OrderID, request);
+            var result = await _orderService.UpdateOrder(OrderID, request, isCheckout);
             return StatusCode(result.Status, result);
         }
 
@@ -41,7 +41,6 @@ namespace InoxThanhNamServer.Controllers
         }
 
         [HttpGet("get-order-item/{OrderID}")]
-        [Authorize]
         public async Task<IActionResult> GetOrder(int OrderID)
         {
             var result = await _orderService.GetOrderItemByUser(OrderID);
@@ -50,21 +49,18 @@ namespace InoxThanhNamServer.Controllers
 
         [HttpGet("orders")]
         [Authorize]
-        public async Task<IActionResult> GetOrders(string? text, int? status, string? fromDate, string? toDate)
+        public async Task<IActionResult> GetOrders([FromQuery]FilterOrder? filter)
         {
-            var result = await _orderService.GetOrders(text, status, fromDate, toDate);
+            var result = await _orderService.GetOrders(filter);
             return StatusCode(result.Status, result);
         }
 
         [HttpGet("get-order-by-user")]
-        public async Task<IActionResult> GetOrderByUser()
+        public async Task<IActionResult> GetOrderByUser([FromQuery] OrderParameters param)
         {
             string? userID = User.FindFirstValue("UserID");
-            if (userID is null)
-            {
-                return Unauthorized();
-            }
-            var result = await _orderService.GetOrderByUser(Guid.Parse(userID));
+            param.UserID = userID;
+            var result = await _orderService.GetOrderByUser(param);
             return StatusCode(result.Status, result);
         }
 

@@ -5,6 +5,7 @@ using InoxThanhNamServer.Datas;
 using InoxThanhNamServer.Datas.Product;
 using InoxThanhNamServer.Datas.ProductImage;
 using InoxThanhNamServer.Models;
+using InoxThanhNamServer.Services.FileSer;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 
@@ -15,13 +16,14 @@ namespace InoxThanhNamServer.Services.ProductImageSer
         private readonly InoxEcommerceContext _context;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _web;
-        private Cloudinary _cloudinary = new Cloudinary(new Account("djilwkrhz", "893911442158619", "KNYGVch5YUopCatK2XmpI_Ne3Xo"));
+        private readonly IFileService _fileService;
 
-        public ProductImageService(InoxEcommerceContext context, IMapper mapper, IWebHostEnvironment web)
+        public ProductImageService(InoxEcommerceContext context, IMapper mapper, IWebHostEnvironment web, IFileService fileService)
         {
             _context = context;
             _mapper = mapper;
             _web = web;
+            _fileService = fileService;
         }
 
         public async Task<ApiResponse<ProductImageProfile>> DeleteImage(int ImageID)
@@ -56,6 +58,54 @@ namespace InoxThanhNamServer.Services.ProductImageSer
                 {
                     Success = false,
                     Message = "ProductImageService - DeleteImage: " + ex.Message,
+                    Status = (int)HttpStatusCode.InternalServerError
+                };
+            }
+        }
+
+        public async Task<ApiResponse<string>> GetImageByProductId(int? productID)
+        {
+            try
+            {
+                await Task.CompletedTask;
+
+                if (productID == null)
+                {
+                    return new ApiResponse<string>
+                    {
+                        Success = false,
+                        Message = "ID không đúng",
+                        Data = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg",
+                        Status = (int)HttpStatusCode.OK
+                    };
+                }
+
+                var image = await _context.ProductImages.FirstOrDefaultAsync(i => i.ProductID == productID);
+                if (image == null)
+                {
+                    return new ApiResponse<string>
+                    {
+                        Success = false,
+                        Message = "Không có hình",
+                        Data = "https://upload.wikimedia.org/wikipedia/commons/1/14/No_Image_Available.jpg",
+                        Status = (int)HttpStatusCode.OK
+                    };
+                }
+
+                return new ApiResponse<string>
+                {
+                    Success = true,
+                    Message = "Lấy hình ảnh thành công",
+                    Data = image.ImageURL,
+                    Status = (int)HttpStatusCode.OK
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<string>
+                {
+                    Success = true,
+                    Message = "Product Image Service - Get Image By Product: " + ex.Message,
                     Status = (int)HttpStatusCode.InternalServerError
                 };
             }
@@ -101,7 +151,7 @@ namespace InoxThanhNamServer.Services.ProductImageSer
             try
             {
                 await Task.CompletedTask;
-                request.ImageURL = await UploadFile(file, request.ImageName);
+                request.ImageURL = await _fileService.UploadFile(file, request.ImageName);
                 var productImageEntity = _mapper.Map<ProductImage>(request);
                 await _context.ProductImages.AddAsync(productImageEntity);
                 await _context.SaveChangesAsync();
@@ -124,26 +174,6 @@ namespace InoxThanhNamServer.Services.ProductImageSer
             }
         }
 
-        private async Task<string> UploadFile(IFormFile file, string fileName)
-        {
-            try
-            {
-                using (var stream = new MemoryStream())
-                {
-                    await file.CopyToAsync(stream);
-                    stream.Seek(0, SeekOrigin.Begin);
-                    var uploadParams = new ImageUploadParams()
-                    {
-                        File = new FileDescription(file.FileName, stream)
-                    };
-                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                    return uploadResult.Uri.ToString();
-                }
-            }
-            catch (Exception)
-            {
-                return string.Empty;
-            }
-        }
+
     }
 }

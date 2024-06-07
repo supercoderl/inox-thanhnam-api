@@ -11,6 +11,8 @@ using InoxThanhNamServer.Models;
 using System.Data;
 using InoxThanhNamServer.Datas.UserAddress;
 using InoxThanhNamServer.Services.UserAddressSer;
+using System.Reflection;
+using InoxThanhNamServer.Services.FileSer;
 
 namespace InoxThanhNamServer.Services.UserSer
 {
@@ -20,13 +22,21 @@ namespace InoxThanhNamServer.Services.UserSer
         private readonly IJWTService _jwtService;
         private readonly IMapper _mapper;
         private readonly IUserAddressService _userAddressService;
+        private readonly IFileService _fileService;
 
-        public UserService(InoxEcommerceContext context, IJWTService jwtService, IMapper mapper, IUserAddressService userAddressService)
+        public UserService(
+            InoxEcommerceContext context, 
+            IJWTService jwtService, 
+            IMapper mapper, 
+            IUserAddressService userAddressService,
+            IFileService fileService
+        )
         {
             _context = context;
             _jwtService = jwtService;
             _mapper = mapper;
             _userAddressService = userAddressService;
+            _fileService = fileService;
         }
 
         public async Task<ApiResponse<LoginResult>> Login(LoginRequest request)
@@ -201,7 +211,6 @@ namespace InoxThanhNamServer.Services.UserSer
             }
             catch (Exception)
             {
-
                 throw;
             }
         }
@@ -322,14 +331,14 @@ namespace InoxThanhNamServer.Services.UserSer
             }
         }
 
-        public async Task<ApiResponse<List<UserProfile>>> GetUsers()
+        public async Task<ApiResponse<List<UserProfile>>> GetUsers(FilterUser? filter)
         {
             try
             {
                 await Task.CompletedTask;
                 var users = await _context.Users.ToListAsync();
 
-                if (users == null || users.Count() <= 0)
+                if (!users.Any())
                 {
                     return new ApiResponse<List<UserProfile>>
                     {
@@ -339,29 +348,35 @@ namespace InoxThanhNamServer.Services.UserSer
                     };
                 }
 
-                var usersMapper = users.Select(x => _mapper.Map<UserProfile>(x)).ToList();
-                foreach(var user in usersMapper)
+                var usersProfile = users.Select(x => _mapper.Map<UserProfile>(x)).ToList();
+
+                foreach (var user in usersProfile)
                 {
-                    user.Roles = (from u in _context.Users
-                                  join ur in _context.UserRoles
-                                  on u.UserID equals ur.UserID
-                                  join r in _context.Roles
-                                  on ur.RoleID equals r.RoleID
-                                  where u.UserID == user.UserID
-                                  select r.Name).ToList();
-                    var userAddressesEntity = await _context.UserAddresses.Where(x => x.UserID == user.UserID).ToListAsync();
-                    var addressResponse = await _userAddressService.GetAddressByUser(user.UserID);
-                    if(addressResponse != null && addressResponse.Success)
+                    if(user != null)
                     {
-                        user.UserAddress = addressResponse.Data;
+                        user.Roles = (from u in _context.Users
+                                      join ur in _context.UserRoles
+                                      on u.UserID equals ur.UserID
+                                      join r in _context.Roles
+                                      on ur.RoleID equals r.RoleID
+                                      where u.UserID == user.UserID
+                                      select r.Name).ToList();
+                        var userAddressesEntity = await _context.UserAddresses.Where(x => x.UserID == user.UserID).ToListAsync();
+                        var addressResponse = await _userAddressService.GetAddressByUser(user.UserID);
+                        if (addressResponse != null && addressResponse.Success)
+                        {
+                            user.UserAddress = addressResponse.Data;
+                        }
                     }
                 };
+
+                if (filter != null) usersProfile = FilterUser(usersProfile, filter);
 
                 return new ApiResponse<List<UserProfile>>
                 {
                     Success = true,
                     Message = "Lấy danh sách người dùng thành công.",
-                    Data = usersMapper,
+                    Data = usersProfile,
                     Status = (int)HttpStatusCode.OK
                 };
             }
@@ -401,6 +416,11 @@ namespace InoxThanhNamServer.Services.UserSer
                         Message = "Người dùng không tồn tại.",
                         Status = (int)HttpStatusCode.OK
                     };
+                }
+
+                if(user.File != null)
+                {
+                    user.Avatar = await _fileService.UploadFile(user.File, user.File.FileName);
                 }
 
                 _mapper.Map(user, userInData);
@@ -502,6 +522,36 @@ namespace InoxThanhNamServer.Services.UserSer
                     Status = (int)HttpStatusCode.InternalServerError
                 };
             }
+        }
+
+        private List<UserProfile> FilterUser(List<UserProfile> users, FilterUser filter)
+        {
+            if (filter.Status is not null)
+                users = users.Where(x => filter.Status == "activated" ? x.IsActive : !x.IsActive).ToList();
+            if (filter.Role is not null)
+                users = users.Where(u => u.Roles is not null && u.Roles.Contains(filter.Role)).ToList();
+            if (filter.SortType is not null)
+            {
+                PropertyInfo? propertyInfo = typeof(UserProfile).GetProperty(char.ToUpper(filter.SortType[0]) + filter.SortType.Substring(1))!;
+                if(propertyInfo != null)
+                {
+                    switch (filter.SortFrom)
+                    {
+                        case "ascending":
+                            users = users.OrderBy(x => propertyInfo.GetValue(x, null)).ToList();
+                            break;
+                        default:
+                            users = users.OrderByDescending(x => propertyInfo.GetValue(x, null)).ToList();
+                            break;
+                    }
+                }
+            }
+            if (filter.SearchText is not null)
+                users = users.Where(x =>
+                    x.Username.ToLower().Contains(filter.SearchText.ToLower()) ||
+                    string.Concat(x.Firstname, x.Lastname).Trim().ToLower().Contains(filter.SearchText.ToLower())
+                ).ToList();
+            return users;
         }
     }
 }
